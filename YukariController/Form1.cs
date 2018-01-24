@@ -1,11 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace YukariController
@@ -15,7 +8,7 @@ namespace YukariController
         public Form1()
         {
             InitializeComponent();
-            var mqtt = new MqttSubscriber();
+            var yukariManager = new YukariManager();
             Console.WriteLine("finish run");
         }
     }

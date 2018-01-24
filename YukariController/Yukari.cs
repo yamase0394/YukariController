@@ -14,7 +14,7 @@ using System.Threading.Tasks;
 
 namespace YukariController
 {
-    public class Voiceroid2
+    public class Yukari
     {
         private const int SW_HIDE = 0;
         //private const int SW_NORMAL = 1;
@@ -30,7 +30,7 @@ namespace YukariController
         private WPFButtonBase playBtn = null;
         private WPFButtonBase saveBtn = null;
 
-        public Voiceroid2()
+        public Yukari()
         {
             Process process = null;
 
@@ -98,7 +98,6 @@ namespace YukariController
             }
         }
 
-        //playとsaveを連続して呼ぶとうまくsaveできない
         [MethodImpl(MethodImplOptions.Synchronized)]
         public void Play(String msg)
         {
@@ -129,12 +128,12 @@ namespace YukariController
             }
 
             //再生完了待機
-            int waitSecond = 1;
+            int waitSecond = 10;
             while (!saveBtn.IsEnabled)
             {
-                Thread.Sleep(1000);
-                Console.WriteLine("wating " + waitSecond + " second");
-                waitSecond++;
+                Thread.Sleep(10);
+                Console.WriteLine("wating " + waitSecond + " ms");
+                waitSecond += 10;
             }
 
             Console.WriteLine("finish playing message");
