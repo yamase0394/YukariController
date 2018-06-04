@@ -7,11 +7,15 @@ using uPLibrary.Networking.M2Mqtt.Messages;
 
 namespace YukariController
 {
+    /// <summary>
+    /// android/notificationトピックをサブスクライブし、その内容をwavで出力する。
+    /// その後出力したパスをパブリッシュする。
+    /// </summary>
     class MqttServer : ServerBase
     {
         private const string TopicAndroidNotification = "android/notification";
         private const string TopicYukariWav = "yukari/wav";
-        private const string BrokerIp = "192.168.1.97";
+        private const string BrokerIp = "sirol.nov";
 
         private MqttClient client;
 
@@ -41,7 +45,7 @@ namespace YukariController
             EnqueueMessage(new YukariMessage(msg));
         }
 
-        protected override void OnCompleteMessageDispatch(YukariCallback callback)
+        protected override void OnCompleteMessageDispatch(int id, YukariCallback callback)
         {
             var fileName = Path.GetFileName(callback.Filepath);
             File.Copy(callback.Filepath, @"\\chtholly.local\home\yukari\" + fileName);

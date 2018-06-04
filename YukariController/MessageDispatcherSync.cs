@@ -5,21 +5,22 @@ using System.Threading.Tasks;
 
 namespace YukariController
 {
-    delegate YukariCallback MessageDispatchEventHandler(YukariMessage command);
+    delegate Task<YukariCallback> MessageDispatchEventHandler(YukariMessage command);
 
     class MessageDispatcherSync
     {
-       public  event MessageDispatchEventHandler OnDispatchEvent;
+        //dequeueされたメッセージを処理するハンドラ
+        public event MessageDispatchEventHandler OnDispatchEvent;
 
         private Task loopTask;
         private CancellationTokenSource tokenSource;
-        private Queue<YukariMessage> msgQueue;
-        private Queue<Action<YukariCallback>> callbackQueue;
+
+        private Queue<Message> msgQueue;
+        private int id = 0;
 
         public MessageDispatcherSync()
         {
-            msgQueue = new Queue<YukariMessage>();
-            callbackQueue = new Queue<Action<YukariCallback>>();
+            msgQueue = new Queue<Message>();
         }
 
         public void StartLoop()
@@ -43,13 +44,13 @@ namespace YukariController
             }
         }
 
-        public void EnqueueMessage(YukariMessage msg, Action<YukariCallback> handler)
+        public int EnqueueMessage(YukariMessage msg, Action<int, YukariCallback> handler)
         {
-            msgQueue.Enqueue(msg);
-            callbackQueue.Enqueue(handler);
+            msgQueue.Enqueue(new Message(msg, handler, id));
+            return id++;
         }
 
-        private void EventLoop(CancellationToken ct)
+        private async void EventLoop(CancellationToken ct)
         {
             while (true)
             {
@@ -57,12 +58,29 @@ namespace YukariController
 
                 if (msgQueue.Count == 0)
                 {
-                    Thread.Sleep(20);
+                    await Task.Delay(10);
                     continue;
                 }
 
-                var callback = OnDispatchEvent(msgQueue.Dequeue());
-                callbackQueue.Dequeue().Invoke(callback);
+                Logger.Log("dequeue message");
+                var msg = msgQueue.Dequeue();
+                var callback = await OnDispatchEvent(msg.YukariMsg);
+                Logger.Log("dequeue callback");
+                msg.Callback.Invoke(msg.Id, callback);
+            }
+        }
+
+        class Message
+        {
+            public YukariMessage YukariMsg { get; }
+            public Action<int, YukariCallback> Callback { get; }
+            public int Id { get; }
+
+           public Message(YukariMessage yukariMsg, Action<int, YukariCallback> callback, int id)
+            {
+                this.YukariMsg = yukariMsg;
+                this.Callback = callback;
+                this.Id = id;
             }
         }
     }

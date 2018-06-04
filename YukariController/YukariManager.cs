@@ -24,17 +24,17 @@ namespace YukariController
             var tcpServer = new TcpServer(msgDispatcher);
         }
 
-        private YukariCallback OnDispatchEvent(YukariMessage msg)
+        private async Task<YukariCallback> OnDispatchEvent(YukariMessage msg)
         {
             switch (msg.Command)
             {
                 case YukariCommand.Play:
-                    yukari.Play(msg.Msg);
+                    await yukari.Play(msg.Msg);
                     return new YukariCallback(msg.Command, msg.Msg);
                 case YukariCommand.Save:
                     var dateStr = DateTime.Now.ToString("yyyyMMdd HHmmss");
                     var fileName = dateStr + ".wav";
-                    yukari.Save(msg.Msg, fileName);
+                    await yukari.Save(msg.Msg, fileName);
                     return new YukariCallback(msg.Command, msg.Msg, SavePath + fileName);
                 default:
                     throw new ArgumentException(msg.Command.ToString());
