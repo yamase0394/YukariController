@@ -34,6 +34,13 @@ namespace YukariController
 
                     var command = (YukariCommand)Enum.Parse(typeof(YukariCommand), req.Command, true);
                     var id = EnqueueMessage(new YukariMessage(command, req.Text));
+
+                    // IDを送信
+                    var netStream = client.GetStream();
+                    var msg = Encoding.UTF8.GetBytes(id.ToString());
+                    netStream.Write(msg, 0, msg.Length);
+                    netStream.Flush();
+
                     sessionMap.Add(id, client);
                 }
             });
