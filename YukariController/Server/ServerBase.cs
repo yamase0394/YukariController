@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace YukariController
 {
-    abstract class ServerBase
+    public abstract class ServerBase
     {
         private MessageDispatcherSync msgDispatcher;
 
@@ -19,6 +19,11 @@ namespace YukariController
         {
             Console.WriteLine("ServerBase:EnqueMessage");
             return msgDispatcher.EnqueueMessage(msg, OnCompleteMessageDispatch);
+        }
+
+        protected async Task<YukariCallback> InterruptMessage(YukariMessage msg)
+        {
+            return await msgDispatcher.InterruptMessage(msg);
         }
 
         /// <summary>

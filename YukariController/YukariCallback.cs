@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace YukariController
 {
-    class YukariCallback
+    public class YukariCallback
     {
         public YukariCommand Command { get; }
         public string Msg { get; }

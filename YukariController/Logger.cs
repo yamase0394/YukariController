@@ -15,7 +15,7 @@ namespace YukariController
         {
             StackFrame sf1 = new StackFrame(1, true);
             MethodBase mb1 = sf1.GetMethod();
-            Debug.WriteLine(
+            Console.WriteLine(
                 DateTime.Now.ToString("HH:mm:ss.fff")
                  + " D/" + sf1.GetMethod().ToString() + ": "
                  + Path.GetFileName(sf1.GetFileName()) + ":"

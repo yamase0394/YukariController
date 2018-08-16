@@ -33,6 +33,8 @@ namespace YukariController
         private WPFTextBox talkTextBox;
         private WPFButtonBase playButton;
         private WPFButtonBase saveButton;
+        private WPFButtonBase stopButton;
+
 
         public Yukari()
         {
@@ -64,6 +66,30 @@ namespace YukariController
             talkTextBox = new WPFTextBox(editUis[4]);
             playButton = new WPFButtonBase(editUis[6]);
             saveButton = new WPFButtonBase(editUis[24]);
+
+            var btnList = editUis.ByType<Button>();
+            var count = btnList.Count;
+            for (int i = 0; i < count; i++)
+            {
+                var btn = new WPFButtonBase(btnList[i]);
+                var btnTxtList = btn.LogicalTree(TreeRunDirection.Descendants).ByType<TextBlock>();
+                if (btnTxtList.Count == 1)
+                {
+                    var btnTxt = new WPFTextBlock(btnTxtList.Single());
+                    if (btnTxt.Text.Equals("停止"))
+                    {
+                        stopButton = btn;
+                    }
+                }
+            }
+        }
+
+        public async Task Stop()
+        {
+            await Task.Run(() =>
+            {
+                stopButton.EmulateClick();
+            });
         }
 
         public async Task Play(String msg)

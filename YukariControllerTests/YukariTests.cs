@@ -5,6 +5,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Net.Sockets;
+using System.IO;
+using Newtonsoft.Json;
+using System.Diagnostics;
 
 namespace YukariController.Tests
 {
@@ -12,12 +16,29 @@ namespace YukariController.Tests
     public class YukariTests
     {
         [TestMethod()]
-        public async Task SaveTest()
+        public async Task CancelTest()
         {
-            var yukari = new Yukari();
-            var msg = "bbbbb";
-            var ran = new Random();
-            await yukari.Save(msg,  ran.Next(1000).ToString());
+            Console.WriteLine("start");
+            var yukariManager = new YukariManager();
+            var testServer = new TestServer(yukariManager.GetDispatcher());
+
+            Console.WriteLine("create tasks");
+            var tasks = new List<Task>();
+            for(int i = 0; i < 5; i++)
+            {
+                var task = Task.Run(async() =>
+                {
+                    var result = await testServer.EnqueueMessage(YukariCommand.Play, "aaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+                    Console.WriteLine($"{result}");
+                });
+                tasks.Add(task);
+            }
+
+            await Task.Delay(1000);
+            var cancelResult = await testServer.EnqueueMessage(YukariCommand.Stop, null);
+            Console.WriteLine($"{cancelResult}");
+
+            await Task.WhenAll(tasks);
         }
     }
 }

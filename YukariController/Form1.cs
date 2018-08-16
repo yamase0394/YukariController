@@ -9,6 +9,7 @@ namespace YukariController
         {
             InitializeComponent();
             var yukariManager = new YukariManager();
+            var tcpServer = new TcpServer(yukariManager.GetDispatcher());
             Console.WriteLine("finish run");
         }
     }

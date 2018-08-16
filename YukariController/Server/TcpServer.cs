@@ -17,7 +17,7 @@ namespace YukariController
 
         public TcpServer(MessageDispatcherSync msgDispatcher) : base(msgDispatcher)
         {
-            Task.Run(() =>
+            Task.Run(async () =>
             {
                 var ipEndPoint = new IPEndPoint(IPAddress.Parse(GetIPAddress()), 8888);
                 tcpListener = new TcpListener(ipEndPoint);
@@ -29,19 +29,31 @@ namespace YukariController
                 {
                     var client = tcpListener.AcceptTcpClient();
 
-                    var streamReader = new StreamReader(client.GetStream(), Encoding.UTF8);
+                    var streamReader = new StreamReader(client.GetStream());
                     var req = JsonConvert.DeserializeObject<YukariRequest>(streamReader.ReadLine());
 
                     var command = (YukariCommand)Enum.Parse(typeof(YukariCommand), req.Command, true);
-                    var id = EnqueueMessage(new YukariMessage(command, req.Text));
+                    if (command == YukariCommand.Stop)
+                    {
+                        var callback = await InterruptMessage(new YukariMessage(command, req.Text));
+                        using (var writer = new StreamWriter(client.GetStream()))
+                        {
+                            writer.WriteLine(callback.Msg);
+                            writer.Flush();
+                        }
+                        client.Close();
+                    }
+                    else
+                    {
+                        var id = EnqueueMessage(new YukariMessage(command, req.Text));
 
-                    // IDを送信
-                    var netStream = client.GetStream();
-                    var msg = Encoding.UTF8.GetBytes(id.ToString());
-                    netStream.Write(msg, 0, msg.Length);
-                    netStream.Flush();
+                        // IDを送信
+                        var writer = new StreamWriter(client.GetStream());
+                        writer.WriteLine(id);
+                        writer.Flush();
 
-                    sessionMap.Add(id, client);
+                        sessionMap.Add(id, client);
+                    }
                 }
             });
         }
@@ -49,11 +61,11 @@ namespace YukariController
         protected override void OnCompleteMessageDispatch(int id, YukariCallback callback)
         {
             using (var client = sessionMap[id])
-            using (var netStream = client.GetStream())
+            using (var writer = new StreamWriter(client.GetStream()))
             {
-                var msg = Encoding.UTF8.GetBytes("ok");
-                netStream.Write(msg, 0, msg.Length);
-                netStream.Flush();
+                Console.WriteLine(callback.Msg);
+                writer.WriteLine(callback.Msg);
+                writer.Flush();
             }
 
             sessionMap.Remove(id);
