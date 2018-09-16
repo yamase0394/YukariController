@@ -3,17 +3,23 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace YukariController
 {
     public class YukariManager
     {
+        private const int DefaultProcessingId = 0;
         private const string SavePath = "";
 
-        private volatile int processingId = 0;
-        private volatile YukariCommand processingCommand;
-        private volatile bool isCanceled = false;
+        private SemaphoreSlim SemaphoreSlim = new SemaphoreSlim(1, 1);
+
+        private int processingId = DefaultProcessingId;
+        private YukariCommand processingCommand;
+        private volatile bool isPaused = false;
+        private bool isCanceled = false;
+        private bool needsResume = false;
 
         private Yukari yukari;
         private MessageDispatcherSync msgDispatcher;
@@ -28,26 +34,52 @@ namespace YukariController
             msgDispatcher.StartLoop();
         }
 
-        public MessageDispatcherSync GetDispatcher() {
+        public MessageDispatcherSync GetDispatcher()
+        {
             return msgDispatcher;
         }
 
         private async Task<YukariCallback> OnDispatchEvent(int id, YukariMessage msg)
         {
-            processingId = id;
-            processingCommand = msg.Command;
-            YukariCallback callback;
+            await SemaphoreSlim.WaitAsync();
+            try
+            {
+                processingId = id;
+                processingCommand = msg.Command;
+            }
+            finally
+            {
+                SemaphoreSlim.Release();
+            }
 
+            YukariCallback callback;
             var res = "ok";
             switch (msg.Command)
             {
                 case YukariCommand.Play:
-                    if (!isCanceled)
-                        await yukari.Play(msg.Msg);
-      
-                    if (isCanceled) res = "canceled";
-                    callback = new YukariCallback(msg.Command, res);
-                    break;
+                    while (isPaused && !isCanceled)
+                    {
+                        await Task.Delay(100);
+                    }
+
+                    if (!isCanceled) await yukari.Play(msg.Msg);
+
+                    await SemaphoreSlim.WaitAsync();
+                    try
+                    {
+                        if (isCanceled)
+                        {
+                            res = "canceled";
+                        }
+
+                        ResetCurrentEventStatus();
+                    }
+                    finally
+                    {
+                        SemaphoreSlim.Release();
+                    }
+
+                    return new YukariCallback(msg.Command, res);
                 case YukariCommand.Save:
                     var dateStr = DateTime.Now.ToString("yyyyMMdd HHmmss");
                     var fileName = dateStr + ".wav";
@@ -58,9 +90,14 @@ namespace YukariController
                     throw new ArgumentException(msg.Command.ToString());
             }
 
-            isCanceled = false;
-            processingId = 0;
+            ResetCurrentEventStatus();
             return callback;
+        }
+
+        private void ResetCurrentEventStatus()
+        {
+            isCanceled = false;
+            processingId = DefaultProcessingId;
         }
 
         private async Task<YukariCallback> OnInterruptEvent(YukariMessage msg)
@@ -68,21 +105,61 @@ namespace YukariController
             switch (msg.Command)
             {
                 case YukariCommand.Stop:
-                    if (int.TryParse(msg.Msg, out int id))
+                    await SemaphoreSlim.WaitAsync();
+                    try
                     {
-                        if (processingId != id)
+                        if (int.TryParse(msg.Msg, out int id) && processingId != id)
+                        {
                             return new YukariCallback(msg.Command, $"Designated Id:{id} is Not Found");
+                        }
 
-                        if (processingCommand != YukariCommand.Play)
-                            return new YukariCallback(msg.Command, $"Id:{id} is {processingCommand} Command");
+                        if (processingId == 0 || processingCommand != YukariCommand.Play)
+                            return new YukariCallback(msg.Command, "Not Playing");
+
+                        if (needsResume) needsResume = false;
+
+                        isCanceled = true;
+                        yukari.Stop();
+                        return new YukariCallback(msg.Command, $"Stop Id={processingId}");
                     }
+                    finally
+                    {
+                        SemaphoreSlim.Release();
+                    }
+                case YukariCommand.Pause:
+                    await SemaphoreSlim.WaitAsync();
+                    try
+                    {
+                        isPaused = true;
 
-                    if (processingId == 0 || processingCommand != YukariCommand.Play)
-                        return new YukariCallback(msg.Command, "Not Playing");
+                        if (processingId != 0 && processingCommand == YukariCommand.Play)
+                        {
+                            yukari.Pause();
+                            needsResume = true;
+                        }
 
-                    await yukari.Stop();
-                    isCanceled = true;
-                    return new YukariCallback(msg.Command, $"Stop Id={processingId}");
+                        return new YukariCallback(msg.Command, "Pause OK!");
+                    }
+                    finally
+                    {
+                        SemaphoreSlim.Release();
+                    }
+                case YukariCommand.Unpause:
+                    isPaused = false;
+                    await SemaphoreSlim.WaitAsync();
+                    try
+                    {
+                        if (needsResume)
+                        {
+                            yukari.Pause();
+                            needsResume = false;
+                        }
+                    }
+                    finally
+                    {
+                        SemaphoreSlim.Release();
+                    }
+                    return new YukariCallback(msg.Command, "Unpause OK!");
                 default:
                     throw new ArgumentException(msg.Command.ToString());
             }

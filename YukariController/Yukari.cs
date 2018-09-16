@@ -92,6 +92,14 @@ namespace YukariController
             });
         }
 
+        public async Task Pause()
+        {
+            await Task.Run(() =>
+            {
+                playButton.EmulateClick();
+            });
+        }
+
         public async Task Play(String msg)
         {
             await Task.Run(async () =>

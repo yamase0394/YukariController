@@ -62,7 +62,7 @@ namespace YukariController
             Logger.Log("interrupt message");
             if (int.TryParse(msg.Msg, out int id))
             {
-                if (id <= 0 || 100 < id)
+                if (!IdManager.IsInRange(id))
                 {
                     return new YukariCallback(msg.Command, $"Out of range Id={id}");
                 }
@@ -147,6 +147,11 @@ namespace YukariController
             {
                 lock (syncRoot)
                     idSet.Remove(id);
+            }
+
+            static public bool IsInRange(int id)
+            {
+                return 0 < id && id <= 100;
             }
         }
     }

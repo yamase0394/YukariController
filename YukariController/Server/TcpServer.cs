@@ -33,26 +33,29 @@ namespace YukariController
                     var req = JsonConvert.DeserializeObject<YukariRequest>(streamReader.ReadLine());
 
                     var command = (YukariCommand)Enum.Parse(typeof(YukariCommand), req.Command, true);
-                    if (command == YukariCommand.Stop)
+                    switch (command)
                     {
-                        var callback = await InterruptMessage(new YukariMessage(command, req.Text));
-                        using (var writer = new StreamWriter(client.GetStream()))
-                        {
-                            writer.WriteLine(callback.Msg);
+                        case YukariCommand.Stop:
+                        case YukariCommand.Pause:
+                        case YukariCommand.Unpause:
+                            var callback = await InterruptMessage(new YukariMessage(command, req.Text));
+                            using (var streamWriter = new StreamWriter(client.GetStream()))
+                            {
+                                streamWriter.WriteLine(callback.Msg);
+                                streamWriter.Flush();
+                            }
+                            client.Close();
+                            break;
+                        default:
+                            var id = EnqueueMessage(new YukariMessage(command, req.Text));
+
+                            // IDを送信
+                            var writer = new StreamWriter(client.GetStream());
+                            writer.WriteLine(id);
                             writer.Flush();
-                        }
-                        client.Close();
-                    }
-                    else
-                    {
-                        var id = EnqueueMessage(new YukariMessage(command, req.Text));
 
-                        // IDを送信
-                        var writer = new StreamWriter(client.GetStream());
-                        writer.WriteLine(id);
-                        writer.Flush();
-
-                        sessionMap.Add(id, client);
+                            sessionMap.Add(id, client);
+                            break;
                     }
                 }
             });

@@ -6,5 +6,5 @@ using System.Threading.Tasks;
 
 namespace YukariController
 {
-    public enum YukariCommand { Play, Save, Stop, Pause}
+    public enum YukariCommand { Play, Save, Stop, Pause, Unpause}
 }
