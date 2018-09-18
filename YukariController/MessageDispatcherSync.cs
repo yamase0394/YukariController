@@ -51,7 +51,7 @@ namespace YukariController
 
         public int EnqueueMessage(YukariMessage msg, Action<int, YukariCallback> handler)
         {
-            Logger.Log("enqueue message");
+            Logger.Log(msg.Command.ToString());
             var id = idManager.GetId();
             msgQueue.Enqueue(new Message(msg, handler, id));
             return id;
@@ -59,7 +59,7 @@ namespace YukariController
 
         public async Task<YukariCallback> InterruptMessage(YukariMessage msg)
         {
-            Logger.Log("interrupt message");
+            Logger.Log(msg.Command.ToString());
             if (int.TryParse(msg.Msg, out int id))
             {
                 if (!IdManager.IsInRange(id))

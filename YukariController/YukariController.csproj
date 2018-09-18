@@ -110,7 +110,9 @@
     </Compile>
     <Compile Include="Server\DiffTcpServer.cs" />
     <Compile Include="Logger.cs" />
+    <Compile Include="Server\LocalServer.cs" />
     <Compile Include="Server\TcpServer.cs" />
+    <Compile Include="Server\YukariRequest.cs" />
     <Compile Include="YukariUiAutomation.cs" />
     <Compile Include="YukariCallback.cs" />
     <Compile Include="YukariCommand.cs" />

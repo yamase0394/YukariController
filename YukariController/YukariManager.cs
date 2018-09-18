@@ -8,8 +8,12 @@ using System.Threading.Tasks;
 
 namespace YukariController
 {
+    public delegate void PauseStateChangedHandler(bool isPaused);
+
     public class YukariManager
     {
+        public PauseStateChangedHandler OnPauseStateChanged;
+
         private const int DefaultProcessingId = 0;
         private const string SavePath = "";
 
@@ -41,6 +45,7 @@ namespace YukariController
 
         private async Task<YukariCallback> OnDispatchEvent(int id, YukariMessage msg)
         {
+            Logger.Log($"{id}:{msg.Msg}");
             await SemaphoreSlim.WaitAsync();
             try
             {
@@ -130,7 +135,13 @@ namespace YukariController
                     await SemaphoreSlim.WaitAsync();
                     try
                     {
+                        if (isPaused)
+                        {
+                            return new YukariCallback(msg.Command, "failed");
+                        }
+
                         isPaused = true;
+                        OnPauseStateChanged(isPaused);
 
                         if (processingId != 0 && processingCommand == YukariCommand.Play)
                         {
@@ -138,14 +149,21 @@ namespace YukariController
                             needsResume = true;
                         }
 
-                        return new YukariCallback(msg.Command, "Pause OK!");
+                        return new YukariCallback(msg.Command, "ok");
                     }
                     finally
                     {
                         SemaphoreSlim.Release();
                     }
                 case YukariCommand.Unpause:
+                    if (!isPaused)
+                    {
+                        return new YukariCallback(msg.Command, "failed");
+                    }
+
                     isPaused = false;
+                    OnPauseStateChanged(isPaused);
+
                     await SemaphoreSlim.WaitAsync();
                     try
                     {
@@ -159,7 +177,7 @@ namespace YukariController
                     {
                         SemaphoreSlim.Release();
                     }
-                    return new YukariCallback(msg.Command, "Unpause OK!");
+                    return new YukariCallback(msg.Command, "ok");
                 default:
                     throw new ArgumentException(msg.Command.ToString());
             }

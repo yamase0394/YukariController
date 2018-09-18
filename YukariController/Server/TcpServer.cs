@@ -39,6 +39,7 @@ namespace YukariController
                         case YukariCommand.Pause:
                         case YukariCommand.Unpause:
                             var callback = await InterruptMessage(new YukariMessage(command, req.Text));
+                            Logger.Log(callback.Msg);
                             using (var streamWriter = new StreamWriter(client.GetStream()))
                             {
                                 streamWriter.WriteLine(callback.Msg);
@@ -63,12 +64,19 @@ namespace YukariController
 
         protected override void OnCompleteMessageDispatch(int id, YukariCallback callback)
         {
-            using (var client = sessionMap[id])
-            using (var writer = new StreamWriter(client.GetStream()))
+            Logger.Log(callback.Msg);
+            try
             {
-                Console.WriteLine(callback.Msg);
-                writer.WriteLine(callback.Msg);
-                writer.Flush();
+                using (var client = sessionMap[id])
+                using (var writer = new StreamWriter(client.GetStream()))
+                {
+                    writer.WriteLine(callback.Msg);
+                    writer.Flush();
+                }
+            }
+            catch (IOException e)
+            {
+                Logger.Log(e.Message);
             }
 
             sessionMap.Remove(id);
@@ -81,23 +89,13 @@ namespace YukariController
 
             foreach (IPAddress ip in ipentry.AddressList)
             {
-                if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+                if (ip.AddressFamily == AddressFamily.InterNetwork)
                 {
                     ipaddress = ip.ToString();
                     break;
                 }
             }
             return ipaddress;
-        }
-
-        [JsonObject("yukariRequest")]
-        class YukariRequest
-        {
-            [JsonProperty("command")]
-            public string Command { get; set; }
-
-            [JsonProperty("text")]
-            public string Text { get; set; }
         }
     }
 }

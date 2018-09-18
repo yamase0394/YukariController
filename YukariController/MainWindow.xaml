@@ -7,6 +7,19 @@
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800">
     <Grid>
-        
+        <Grid.RowDefinitions>
+            <RowDefinition Height="50"/>
+            <RowDefinition/>
+        </Grid.RowDefinitions>
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition />
+                <ColumnDefinition />
+            </Grid.ColumnDefinitions>
+        <Button x:Name="ButtonPause" Content="一時停止" Click="ButtonPause_Click"/>
+            <Button x:Name="ButtonStop" Content="停止" Grid.Column="1" Click="ButtonStop_Click" />
+        </Grid>
+        <TextBox x:Name="LogTextBox" IsReadOnly="True" Grid.Row="1" 
+                 VerticalScrollBarVisibility="Visible"  TextWrapping="Wrap" FontSize="16"/>
     </Grid>
 </Window>
