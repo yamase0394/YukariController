@@ -42,7 +42,7 @@ namespace YukariController
             var notificationData = JsonConvert.DeserializeObject<NotificationData>(Encoding.UTF8.GetString(e.Message));
             var msg = notificationData.Title + "\r\n" + notificationData.Text;
             Console.WriteLine("enqueue message;" + msg);
-            EnqueueMessage(new YukariMessage(msg));
+            //EnqueueMessage(new YukariMessage(msg));
         }
 
         protected override void OnCompleteMessageDispatch(int id, YukariCallback callback)

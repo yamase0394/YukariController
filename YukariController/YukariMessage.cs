@@ -8,12 +8,12 @@ namespace YukariController
 {
     public class YukariMessage
     {
-        public YukariCommand Command { get; }
+        public YukariManager.Command Command { get; }
         public string Msg { get; }
 
-        public YukariMessage(string msg) : this(YukariCommand.Play, msg) { }
+        public YukariMessage(string msg) : this(YukariManager.Command.Play, msg) { }
 
-        public YukariMessage(YukariCommand command, string msg)
+        public YukariMessage(YukariManager.Command command, string msg)
         {
             this.Command = command;
             this.Msg = msg;

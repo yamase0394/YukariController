@@ -115,7 +115,6 @@
     <Compile Include="Server\YukariRequest.cs" />
     <Compile Include="YukariUiAutomation.cs" />
     <Compile Include="YukariCallback.cs" />
-    <Compile Include="YukariCommand.cs" />
     <Compile Include="MessageDispatcherSync.cs" />
     <Compile Include="Server\MqttServer.cs" />
     <Compile Include="Server\ServerBase.cs" />

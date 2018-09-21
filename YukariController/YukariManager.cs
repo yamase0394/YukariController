@@ -12,6 +12,7 @@ namespace YukariController
 
     public class YukariManager
     {
+        public enum Command { Play, Save, Stop, Pause, Unpause }
         public PauseStateChangedHandler OnPauseStateChanged;
 
         private const int DefaultProcessingId = 0;
@@ -20,7 +21,7 @@ namespace YukariController
         private SemaphoreSlim SemaphoreSlim = new SemaphoreSlim(1, 1);
 
         private int processingId = DefaultProcessingId;
-        private YukariCommand processingCommand;
+        private Command processingCommand;
         private volatile bool isPaused = false;
         private bool isCanceled = false;
         private bool needsResume = false;
@@ -61,7 +62,7 @@ namespace YukariController
             var res = "ok";
             switch (msg.Command)
             {
-                case YukariCommand.Play:
+                case Command.Play:
                     while (isPaused && !isCanceled)
                     {
                         await Task.Delay(100);
@@ -85,7 +86,7 @@ namespace YukariController
                     }
 
                     return new YukariCallback(msg.Command, res);
-                case YukariCommand.Save:
+                case Command.Save:
                     var dateStr = DateTime.Now.ToString("yyyyMMdd HHmmss");
                     var fileName = dateStr + ".wav";
                     await yukari.Save(msg.Msg, fileName);
@@ -109,7 +110,7 @@ namespace YukariController
         {
             switch (msg.Command)
             {
-                case YukariCommand.Stop:
+                case Command.Stop:
                     await SemaphoreSlim.WaitAsync();
                     try
                     {
@@ -118,7 +119,7 @@ namespace YukariController
                             return new YukariCallback(msg.Command, $"Designated Id:{id} is Not Found");
                         }
 
-                        if (processingId == 0 || processingCommand != YukariCommand.Play)
+                        if (processingId == 0 || processingCommand != Command.Play)
                             return new YukariCallback(msg.Command, "Not Playing");
 
                         if (needsResume) needsResume = false;
@@ -131,7 +132,7 @@ namespace YukariController
                     {
                         SemaphoreSlim.Release();
                     }
-                case YukariCommand.Pause:
+                case Command.Pause:
                     await SemaphoreSlim.WaitAsync();
                     try
                     {
@@ -143,7 +144,7 @@ namespace YukariController
                         isPaused = true;
                         OnPauseStateChanged(isPaused);
 
-                        if (processingId != 0 && processingCommand == YukariCommand.Play)
+                        if (processingId != 0 && processingCommand == Command.Play)
                         {
                             yukari.Pause();
                             needsResume = true;
@@ -155,7 +156,7 @@ namespace YukariController
                     {
                         SemaphoreSlim.Release();
                     }
-                case YukariCommand.Unpause:
+                case Command.Unpause:
                     if (!isPaused)
                     {
                         return new YukariCallback(msg.Command, "failed");

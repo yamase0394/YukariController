@@ -32,32 +32,27 @@ namespace YukariController
                     var streamReader = new StreamReader(client.GetStream());
                     var req = JsonConvert.DeserializeObject<YukariRequest>(streamReader.ReadLine());
 
-                    var command = (YukariCommand)Enum.Parse(typeof(YukariCommand), req.Command, true);
-                    switch (command)
+                    Action<YukariCallback> onInterruptedMessage = (callback) =>
                     {
-                        case YukariCommand.Stop:
-                        case YukariCommand.Pause:
-                        case YukariCommand.Unpause:
-                            var callback = await InterruptMessage(new YukariMessage(command, req.Text));
-                            Logger.Log(callback.Msg);
-                            using (var streamWriter = new StreamWriter(client.GetStream()))
-                            {
-                                streamWriter.WriteLine(callback.Msg);
-                                streamWriter.Flush();
-                            }
-                            client.Close();
-                            break;
-                        default:
-                            var id = EnqueueMessage(new YukariMessage(command, req.Text));
+                        using (var streamWriter = new StreamWriter(client.GetStream()))
+                        {
+                            streamWriter.WriteLine(callback.Msg);
+                            streamWriter.Flush();
+                        }
+                        client.Close();
+                    };
 
-                            // IDを送信
-                            var writer = new StreamWriter(client.GetStream());
-                            writer.WriteLine(id);
-                            writer.Flush();
+                    Action<int> onEnquedMessage = (id) =>
+                    {
+                        // IDを送信
+                        var writer = new StreamWriter(client.GetStream());
+                        writer.WriteLine(id);
+                        writer.Flush();
 
-                            sessionMap.Add(id, client);
-                            break;
-                    }
+                        sessionMap.Add(id, client);
+                    };
+
+                    HandleRequest(req, onEnquedMessage, onInterruptedMessage);
                 }
             });
         }

@@ -93,10 +93,10 @@ namespace YukariController
             switch ((string)button.Content)
             {
                 case "一時停止":
-                    result = await localServer.EnqueueMessage(YukariCommand.Pause, "");
+                    result = await localServer.EnqueueMessage(YukariManager.Command.Pause, "");
                     break;
                 case "再開":
-                    result = await localServer.EnqueueMessage(YukariCommand.Unpause, "");
+                    result = await localServer.EnqueueMessage(YukariManager.Command.Unpause, "");
                     break;
                 default:
                     throw new Exception((string)button.Content);
@@ -106,7 +106,7 @@ namespace YukariController
 
         private async void ButtonStop_Click(object sender, RoutedEventArgs e)
         {
-            var result = await localServer.EnqueueMessage(YukariCommand.Stop, "");
+            var result = await localServer.EnqueueMessage(YukariManager.Command.Stop, "");
             Logger.Log(result);
         }
     }

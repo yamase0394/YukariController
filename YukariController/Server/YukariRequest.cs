@@ -1,5 +1,6 @@
 ﻿
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -13,11 +14,10 @@ namespace YukariController
     public class YukariRequest
     {
         [JsonProperty("command")]
-        [DefaultValue("Play")]
-        public string Command { get; set; }
+        [JsonConverter(typeof(StringEnumConverter))]
+        public YukariManager.Command Command { get; set; }
 
         [JsonProperty("text")]
-        [DefaultValue("")]
         public string Text { get; set; }
     }
 }

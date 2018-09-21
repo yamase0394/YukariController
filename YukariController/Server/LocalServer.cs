@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace YukariController
 {
-    class LocalServer : ServerBase
+    public class LocalServer : ServerBase
     {
         private ConcurrentDictionary<int, Task<string>> sessionMap;
         private ConcurrentDictionary<int, string> resultMap;
@@ -18,26 +18,26 @@ namespace YukariController
             resultMap = new ConcurrentDictionary<int, string>();
         }
 
-        public async Task<string> EnqueueMessage(YukariCommand command, string text)
+        public async Task<string> EnqueueMessage(YukariManager.Command command, string text)
         {
             Console.WriteLine("Enqueue");
-            switch (command)
+            var req = new YukariRequest();
+            req.Command = command;
+            req.Text = text;
+
+            Func<YukariCallback, Task<string>> onInterruptedMessage = async (callback) => callback.Msg;
+
+            Func<int, Task<string>> onEnquedMessage = async (id) =>
             {
-                case YukariCommand.Stop:
-                case YukariCommand.Pause:
-                case YukariCommand.Unpause:
-                    var callback = await InterruptMessage(new YukariMessage(command, text));
-                    return callback.Msg;
-                default:
-                    var id = EnqueueMessage(new YukariMessage(command, text));
-                    Console.WriteLine(id);
-                    var task = new Task<string>(() =>
-                    {
-                        return resultMap[id];
-                    });
-                    sessionMap.TryAdd(id, task);
-                    return await task;
-            }
+                var task = new Task<string>(() =>
+                {
+                    return resultMap[id];
+                });
+                sessionMap.TryAdd(id, task);
+                return await task;
+            };
+
+           return await HandleRequest(req, onEnquedMessage, onInterruptedMessage);
         }
 
         protected override void OnCompleteMessageDispatch(int id, YukariCallback callback)

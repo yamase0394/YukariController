@@ -8,17 +8,17 @@ namespace YukariController
 {
     public class YukariCallback
     {
-        public YukariCommand Command { get; }
+        public YukariManager.Command Command { get; }
         public string Msg { get; }
         public string Filepath { get; }
 
-        public YukariCallback(YukariCommand command, string msg)
+        public YukariCallback(YukariManager.Command command, string msg)
         {
             Command = command;
             Msg = msg;
         }
 
-        public YukariCallback(YukariCommand command, string msg, string filepath) :this(command, msg)
+        public YukariCallback(YukariManager.Command command, string msg, string filepath) :this(command, msg)
         {
             Filepath = filepath;
         }

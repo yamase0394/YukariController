@@ -94,7 +94,7 @@ namespace YukariController
                         }
 
                         Console.WriteLine("enqueue : " + askText);
-                        EnqueueMessage(new YukariMessage(askText));
+                        //EnqueueMessage(new YukariMessage(askText));
                         partial = receivedText;
                     }
                 }
